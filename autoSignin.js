@@ -10,6 +10,8 @@ const updateAccesssTokenURL = 'https://auth.aliyundrive.com/v2/account/token'
 const signinURL = 'https://member.aliyundrive.com/v1/activity/sign_in_list'
 const clearURL = 'https://api.aliyundrive.com/v2/recyclebin/clear'
 const getdeviceidurl = 'https://api.aliyundrive.com/adrive/v2/user/get'
+const getfilelistURL = 'https://api.aliyundrive.com/adrive/v3/file/list'
+const batchURL = 'https://api.aliyundrive.com/v2/batch'
 
 // 使用 refresh_token 更新 access_token
 function updateAccesssToken(queryBody, remarks) {
@@ -104,12 +106,65 @@ function getdeviceid(access_token) {
     })
 }
 
+//获取临时转存文件内容
+function getfilelist(default_drive_id, temp_transfer_folder_id, access_token) {
+  return axios(getfilelistURL, {
+    method: 'POST',
+    data: '{"drive_id":"' + default_drive_id + '","parent_file_id":"' + temp_transfer_folder_id + '","limit":200}',
+    headers: {
+      authorization: access_token,
+      'Content-Type': 'application/json'
+    }
+  })
+    .then(d => d.data)
+    .then(d => {
+      const { items } = d
+      return items.map(item => item.file_id);
+    })
+    .catch(e => {
+      errorMessage.push(e.message)
+      return Promise.reject(errorMessage.join(', '))
+    })
+}
+
+//删除文件到回收站
+function batch(default_drive_id, file_ids, access_token) {
+  const requests = file_ids.map(fileId => ({
+    body: {
+      drive_id: default_drive_id,
+      file_id: fileId
+    },
+    id: fileId,
+    method: "POST",
+    url: "/recyclebin/trash"
+  }));
+
+  const result = {
+    requests: requests,
+    resource: "file"
+  };
+  return axios(batchURL, {
+    method: 'POST',
+    data: JSON.stringify(result),
+    headers: {
+      authorization: access_token,
+      'Content-Type': 'application/json'
+    }
+  })
+    .then(d => d.data)
+    .then(d => { })
+    .catch(e => {
+      errorMessage.push(e.message)
+      return Promise.reject(errorMessage.join(', '))
+    })
+}
+
 //清空回收站
-function clearfiles(queryBody, access_token, remarks) {
+function clearfiles(default_drive_id, access_token, remarks) {
   const sendMessage = [remarks]
   return axios(clearURL, {
     method: 'POST',
-    data: queryBody,
+    data: '{"drive_id":"' + default_drive_id + '"}',
     headers: {
       authorization: access_token,
       'Content-Type': 'application/json'
@@ -158,19 +213,41 @@ async function getRefreshToken() {
     process.exit(1)
   }
 
+
+  let temp_transfer_folder_id = process.env.temp_transfer_folder_id || []
+  try {
+    if (instance) temp_transfer_folder_id = await getEnv(instance, 'temp_transfer_folder_id')
+  } catch (e) { }
+
+  let temp_transfer_folder_idArray = []
+
+  if (Array.isArray(temp_transfer_folder_id)) temp_transfer_folder_idArray = temp_transfer_folder_id
+  else if (temp_transfer_folder_id.indexOf('&') > -1)
+    temp_transfer_folder_idArray = temp_transfer_folder_id.split('&')
+  else if (temp_transfer_folder_id.indexOf('\n') > -1)
+    temp_transfer_folder_idArray = temp_transfer_folder_id.split('\n')
+  else temp_transfer_folder_idArray = [temp_transfer_folder_id]
+
+  if (!temp_transfer_folder_idArray.length) {
+    console.log('未获取到temp_transfer_folder_id, 程序终止')
+    process.exit(1)
+  }
+
   return {
     instance,
-    refreshTokenArray
+    refreshTokenArray,
+    temp_transfer_folder_idArray
   }
 }
 
 !(async () => {
-  const { instance, refreshTokenArray } = await getRefreshToken()
+  const { instance, refreshTokenArray, temp_transfer_folder_idArray } = await getRefreshToken()
 
   const message = []
   let index = 1
   for await (refreshToken of refreshTokenArray) {
     let remarks = refreshToken.remarks || `账号${index}`
+    let temp_transfer_folder_id = temp_transfer_folder_idArray[index - 1]
     const queryBody = {
       grant_type: 'refresh_token',
       refresh_token: refreshToken.value || refreshToken
@@ -203,12 +280,18 @@ async function getRefreshToken() {
       const sendMessage = await sign_in(queryBody, access_token, remarks)
       console.log(sendMessage)
       console.log('\n')
-      const { default_drive_id } =
-        await getdeviceid(access_token)
-      sendMessage = await clearfiles('{"drive_id":"' + default_drive_id + '"}', access_token, remarks)
-      console.log(sendMessage)
-      console.log('\n')
       message.push(sendMessage)
+      if (temp_transfer_folder_id && temp_transfer_folder_id !== 'none') {
+        const { default_drive_id } =
+          await getdeviceid(access_token)
+        const filelist =
+          await getfilelist(default_drive_id, temp_transfer_folder_id, access_token)
+        await batch(default_drive_id, filelist, access_token)
+        sendMessage = await clearfiles(default_drive_id, access_token, remarks)
+        console.log(sendMessage)
+        console.log('\n')
+        message.push(sendMessage)
+      }
     } catch (e) {
       console.log(e)
       console.log('\n')
