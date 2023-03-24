@@ -248,9 +248,7 @@ async function getRefreshToken() {
   for await (refreshToken of refreshTokenArray) {
     let remarks = refreshToken.remarks || `账号${index}`
     let temp_transfer_folder_id = temp_transfer_folder_idArray[index - 1] || 'none'
-    if (temp_transfer_folder_id.value) {
-      temp_transfer_folder_id = temp_transfer_folder_id.value
-    }
+    temp_transfer_folder_id = temp_transfer_folder_id.value || temp_transfer_folder_id
     const queryBody = {
       grant_type: 'refresh_token',
       refresh_token: refreshToken.value || refreshToken
@@ -287,9 +285,14 @@ async function getRefreshToken() {
       if (temp_transfer_folder_id && temp_transfer_folder_id !== 'none') {
         const { default_drive_id } =
           await getdeviceid(access_token)
-        const filelist =
-          await getfilelist(default_drive_id, temp_transfer_folder_id, access_token)
+        let filelist = []
+        filelist = await getfilelist(default_drive_id, temp_transfer_folder_id, access_token)
         await batch(default_drive_id, filelist, access_token)
+        while (filelist.length == 200) {
+          filelist = await getfilelist(default_drive_id, temp_transfer_folder_id, access_token)
+          await batch(default_drive_id, filelist, access_token)
+        }
+
         sendMessage = await clearfiles(default_drive_id, access_token, remarks)
         console.log(sendMessage)
         console.log('\n')
