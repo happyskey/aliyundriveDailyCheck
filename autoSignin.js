@@ -8,6 +8,8 @@ const notify = require('./sendNotify')
 
 const updateAccesssTokenURL = 'https://auth.aliyundrive.com/v2/account/token'
 const signinURL = 'https://member.aliyundrive.com/v1/activity/sign_in_list'
+const clearURL = 'https://api.aliyundrive.com/v2/recyclebin/clear'
+const getdeviceidurl = 'https://api.aliyundrive.com/adrive/v2/user/get'
 
 // 使用 refresh_token 更新 access_token
 function updateAccesssToken(queryBody, remarks) {
@@ -68,8 +70,7 @@ function sign_in(queryBody, access_token, remarks) {
         (currentSignInfo.reward.name || currentSignInfo.reward.description)
       )
         sendMessage.push(
-          `本次签到获得${currentSignInfo.reward.name || ''}${
-            currentSignInfo.reward.description || ''
+          `本次签到获得${currentSignInfo.reward.name || ''}${currentSignInfo.reward.description || ''
           }`
         )
 
@@ -82,17 +83,66 @@ function sign_in(queryBody, access_token, remarks) {
     })
 }
 
+//获取设备id
+function getdeviceid(access_token) {
+  return axios(getdeviceidurl, {
+    method: 'POST',
+    data: '{}',
+    headers: {
+      authorization: access_token,
+      'Content-Type': 'application/json'
+    }
+  })
+    .then(d => d.data)
+    .then(d => {
+      const { default_drive_id } = d
+      return { default_drive_id }
+    })
+    .catch(e => {
+      errorMessage.push(e.message)
+      return Promise.reject(errorMessage.join(', '))
+    })
+}
+
+//清空回收站
+function clearfiles(queryBody, access_token, remarks) {
+  const sendMessage = [remarks]
+  return axios(clearURL, {
+    method: 'POST',
+    data: queryBody,
+    headers: {
+      authorization: access_token,
+      'Content-Type': 'application/json'
+    }
+  })
+    .then(d => d.data)
+    .then(json => {
+      if (!json.domain_id) {
+        sendMessage.push('清空回收站失败')
+        return Promise.reject(sendMessage.join(', '))
+      }
+      else {
+        sendMessage.push('清空回收站成功')
+        return Promise.reject(sendMessage.join(', '))
+      }
+    })
+    .catch(e => {
+      sendMessage.push(e.message)
+      return Promise.reject(sendMessage.join(', '))
+    })
+}
+
 // 获取环境变量
 async function getRefreshToken() {
   let instance = null
   try {
     instance = await initInstance()
-  } catch (e) {}
+  } catch (e) { }
 
   let refreshToken = process.env.refreshToken || []
   try {
     if (instance) refreshToken = await getEnv(instance, 'refreshToken')
-  } catch (e) {}
+  } catch (e) { }
 
   let refreshTokenArray = []
 
@@ -151,6 +201,11 @@ async function getRefreshToken() {
       }
 
       const sendMessage = await sign_in(queryBody, access_token, remarks)
+      console.log(sendMessage)
+      console.log('\n')
+      const { default_drive_id } =
+        await getdeviceid(access_token)
+      sendMessage = await clearfiles('{"drive_id":"' + default_drive_id + '"}', access_token, remarks)
       console.log(sendMessage)
       console.log('\n')
       message.push(sendMessage)
