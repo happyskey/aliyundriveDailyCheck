@@ -173,11 +173,11 @@ function clearfiles(default_drive_id, access_token, remarks) {
     .then(d => d.data)
     .then(json => {
       if (!json.domain_id) {
-        sendMessage.push('清空回收站失败')
+        sendMessage.push('清空转存目录失败')
         return Promise.reject(sendMessage.join(', '))
       }
       else {
-        sendMessage.push('清空回收站成功')
+        sendMessage.push('清空转存目录成功')
         return Promise.reject(sendMessage.join(', '))
       }
     })
@@ -228,6 +228,11 @@ async function getRefreshToken() {
     temp_transfer_folder_idArray = temp_transfer_folder_id.split('\n')
   else temp_transfer_folder_idArray = [temp_transfer_folder_id]
 
+  // if (!temp_transfer_folder_idArray.length) {
+  //   console.log('未获取到temp_transfer_folder_id, 程序终止')
+  //   process.exit(1)
+  // }
+
   return {
     instance,
     refreshTokenArray,
@@ -243,6 +248,9 @@ async function getRefreshToken() {
   for await (refreshToken of refreshTokenArray) {
     let remarks = refreshToken.remarks || `账号${index}`
     let temp_transfer_folder_id = temp_transfer_folder_idArray[index - 1] || 'none'
+    if (temp_transfer_folder_id.value) {
+      temp_transfer_folder_id = temp_transfer_folder_id.value
+    }
     const queryBody = {
       grant_type: 'refresh_token',
       refresh_token: refreshToken.value || refreshToken
