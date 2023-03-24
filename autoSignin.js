@@ -247,7 +247,7 @@ async function getRefreshToken() {
   let index = 1
   for await (refreshToken of refreshTokenArray) {
     let remarks = refreshToken.remarks || `账号${index}`
-    let temp_transfer_folder_id = temp_transfer_folder_idArray[index - 1]
+    let temp_transfer_folder_id = temp_transfer_folder_idArray[index - 1] || 'none'
     const queryBody = {
       grant_type: 'refresh_token',
       refresh_token: refreshToken.value || refreshToken
