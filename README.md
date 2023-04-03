@@ -32,7 +32,7 @@
 | 参数                     | 说明                                             |
 | ------------------------ | ------------------------------------------------ |
 | refreshToken             | 阿里云盘 refresh_token, 添加多个可支持多账户签到 |
-| temp_transfer_folder_id  | 阿里云盘 文件夹folderid,填了此项会删除该文件夹下所有文件, 多个需与 refreshToken 一一对应，不需要可不填或填none|
+|<font color= "#FF0000"> temp_transfer_folder_id</font>    | 阿里云盘 文件夹folderid,填了此项会删除该文件夹下所有文件, 多个需与 refreshToken 一一对应，不需要可不填或填none|
 | CLIENT_ID                | 可选项, 用于青龙面板 API 更新 refreshToken 字段  |
 | CLIENT_SECRET            | 可选项, 用于青龙面板 API 更新 refreshToken 字段  |
 
