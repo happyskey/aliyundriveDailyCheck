@@ -31,9 +31,9 @@
 
 | 参数                     | 说明                                             |
 | ------------------------ | ------------------------------------------------ |
-| refreshToken             | 阿里云盘 refresh_token, 添加多个可支持多账户签到 |
+| refreshToken             | 阿里云盘 refresh_token, 添加多个可支持多账户签到（建议一个变量里面存一个账号） |
 | temp_transfer_folder_id  | 阿里云盘 文件夹folderid,填了此项会删除该文件夹下所有文件, 多个需与 refreshToken 一一对应，不需要可不填或填none|
-| CLIENT_ID                | 可选项, 用于青龙面板 API 更新 refreshToken 字段  |
+| CLIENT_ID                | 可选项, 用于青龙面板 API 更新 refreshToken 字段 (多个refreshToken需一个变量里面存一个账号否则会失败) |
 | CLIENT_SECRET            | 可选项, 用于青龙面板 API 更新 refreshToken 字段  |
 
 `CLIENT_ID` 和 `CLIENT_SECRET` 可在 `青龙面板 -> 系统设置 -> 应用设置 -> 新建应用` 新增, 用于自动更新环境变量内 `refreshToken` 配置
