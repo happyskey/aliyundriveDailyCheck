@@ -136,7 +136,7 @@ function batch(default_drive_id, file_ids, access_token) {
     },
     id: fileId,
     method: "POST",
-    url: "/recyclebin/trash"
+    url: "/file/delete"
   }));
 
   const result = {
@@ -287,16 +287,18 @@ async function getRefreshToken() {
           await getdeviceid(access_token)
         let filelist = []
         filelist = await getfilelist(default_drive_id, temp_transfer_folder_id, access_token)
+        let filecount = filelist.length
         await batch(default_drive_id, filelist, access_token)
         while (filelist.length == 200) {
           filelist = await getfilelist(default_drive_id, temp_transfer_folder_id, access_token)
+          filecount += filelist.length
           await batch(default_drive_id, filelist, access_token)
         }
-
-        sendMessage = await clearfiles(default_drive_id, access_token, remarks)
-        console.log(sendMessage)
+        // sendMessage = await clearfiles(default_drive_id, access_token, remarks)
+        // message.push(sendMessage)
+        console.log(`已删除转存文件${filecount}个`)
+        message.push(`已删除转存文件${filecount}个`)
         console.log('\n')
-        message.push(sendMessage)
       }
     } catch (e) {
       console.log(e)
