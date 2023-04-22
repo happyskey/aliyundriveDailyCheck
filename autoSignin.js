@@ -8,13 +8,13 @@ const notify = require('./sendNotify')
 
 const updateAccesssTokenURL = 'https://auth.aliyundrive.com/v2/account/token'
 const signinURL = 'https://member.aliyundrive.com/v1/activity/sign_in_list'
-const clearURL = 'https://api.aliyundrive.com/v2/recyclebin/clear'
 const getdeviceidurl = 'https://api.aliyundrive.com/adrive/v2/user/get'
 const getfilelistURL = 'https://api.aliyundrive.com/adrive/v3/file/list'
 const batchURL = 'https://api.aliyundrive.com/v2/batch'
-
+const restarttime = 10
 // 使用 refresh_token 更新 access_token
-function updateAccesssToken(queryBody, remarks) {
+function updateAccesssToken(queryBody, remarks, time) {
+  const _times = time | 0
   const errorMessage = [remarks, '更新 access_token 失败']
   return axios(updateAccesssTokenURL, {
     method: 'POST',
@@ -30,19 +30,30 @@ function updateAccesssToken(queryBody, remarks) {
           code === 'InvalidParameter.RefreshToken'
         )
           errorMessage.push('refresh_token 已过期或无效')
-        else errorMessage.push(message)
-        return Promise.reject(errorMessage.join(', '))
+        else errorMessage.push(message)        
+        if(_times<restarttime){
+          return updateAccesssToken(queryBody, remarks,_times+1)
+        }
+        else{
+          return Promise.reject(errorMessage.join(', '))
+        }
       }
       return { nick_name, refresh_token, access_token }
     })
     .catch(e => {
       errorMessage.push(e.message)
-      return Promise.reject(errorMessage.join(', '))
+        if(_times<restarttime){
+          return updateAccesssToken(queryBody, remarks,_times+1)
+        }
+        else{
+          return Promise.reject(errorMessage.join(', '))
+        }
     })
 }
 
 //签到
-function sign_in(queryBody, access_token, remarks) {
+function sign_in(queryBody, access_token, remarks,times) {
+  const _times = times | 0
   const sendMessage = [remarks]
   return axios(signinURL, {
     method: 'POST',
@@ -56,7 +67,12 @@ function sign_in(queryBody, access_token, remarks) {
     .then(json => {
       if (!json.success) {
         sendMessage.push('签到失败')
-        return Promise.reject(sendMessage.join(', '))
+        if(_times<restarttime){
+          return sign_in(queryBody, access_token, remarks,_times+1)
+        }
+        else{
+          return Promise.reject(sendMessage.join(', '))
+        }
       }
 
       sendMessage.push('签到成功')
@@ -92,12 +108,18 @@ function sign_in(queryBody, access_token, remarks) {
     .catch(e => {
       sendMessage.push('签到失败')
       sendMessage.push(e.message)
-      return Promise.reject(sendMessage.join(', '))
+        if(_times<restarttime){
+          return sign_in(queryBody, access_token, remarks,_times+1)
+        }
+        else{
+          return Promise.reject(sendMessage.join(', '))
+        }
     })
 }
 
 //获取设备id
-function getdeviceid(access_token) {
+function getdeviceid(access_token,time) {
+  const _times = time | 0
   return axios(getdeviceidurl, {
     method: 'POST',
     data: '{}',
@@ -113,12 +135,18 @@ function getdeviceid(access_token) {
     })
     .catch(e => {
       errorMessage.push(e.message)
-      return Promise.reject(errorMessage.join(', '))
+        if(_times<restarttime){
+          return getdeviceid(access_token,_times+1)
+        }
+        else{
+          return Promise.reject(errorMessage.join(', '))
+        }
     })
 }
 
 //获取临时转存文件内容
-function getfilelist(default_drive_id, temp_transfer_folder_id, access_token) {
+function getfilelist(default_drive_id, temp_transfer_folder_id, access_token, time) {
+  const _times = time | 0
   return axios(getfilelistURL, {
     method: 'POST',
     data: '{"drive_id":"' + default_drive_id + '","parent_file_id":"' + temp_transfer_folder_id + '","limit":200}',
@@ -134,12 +162,18 @@ function getfilelist(default_drive_id, temp_transfer_folder_id, access_token) {
     })
     .catch(e => {
       errorMessage.push(e.message)
-      return Promise.reject(errorMessage.join(', '))
+        if(_times<restarttime){
+          return getfilelist(default_drive_id, temp_transfer_folder_id, access_token, _times+1)
+        }
+        else{
+           return Promise.reject(errorMessage.join(', '))
+        }
     })
 }
 
 //直接删除文件
-function batch(default_drive_id, file_ids, access_token) {
+function batch(default_drive_id, file_ids, access_token, time) {
+  const _times = time | 0
   const requests = file_ids.map(fileId => ({
     body: {
       drive_id: default_drive_id,
@@ -166,7 +200,12 @@ function batch(default_drive_id, file_ids, access_token) {
     .then(d => { })
     .catch(e => {
       errorMessage.push(e.message)
-      return Promise.reject(errorMessage.join(', '))
+        if(_times<restarttime){
+          return batch(default_drive_id, file_ids, access_token, _times+1)
+        }
+        else{
+           return Promise.reject(errorMessage.join(', '))
+        }
     })
 }
 
