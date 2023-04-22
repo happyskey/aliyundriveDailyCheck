@@ -52,7 +52,7 @@ function updateAccesssToken(queryBody, remarks, time) {
 }
 
 //签到
-function sign_in(queryBody, access_token, remarks,times) {
+function sign_in(queryBody, access_token, remarks, times) {
   const _times = times | 0
   const sendMessage = [remarks]
   return axios(signinURL, {
@@ -118,7 +118,7 @@ function sign_in(queryBody, access_token, remarks,times) {
 }
 
 //获取设备id
-function getdeviceid(access_token,time) {
+function getdeviceid(access_token, time) {
   const _times = time | 0
   return axios(getdeviceidurl, {
     method: 'POST',
