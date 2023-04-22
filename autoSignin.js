@@ -83,7 +83,7 @@ function sign_in(queryBody, access_token, remarks) {
         res.forEach(function(item,index,self){
           days+=item.rewardAmount
         })
-        sendMessage.push(`有${res.length}张容量延期卡共${days}天【待领取】`)
+        sendMessage.push(`有${res.length}张容量延期卡共${days}天【待领取,请在月底之前领取】`)
       }
 
       return sendMessage.join(', ')
