@@ -63,18 +63,28 @@ function sign_in(queryBody, access_token, remarks) {
 
       const { signInLogs, signInCount } = json.result
       const currentSignInfo = signInLogs[signInCount - 1] // 当天签到信息
-
       sendMessage.push(`本月累计签到 ${signInCount} 天`)
 
       // 当天签到是否有奖励
       if (
         currentSignInfo.reward &&
-        (currentSignInfo.reward.name || currentSignInfo.reward.description)
-      )
+        (currentSignInfo.reward.name || currentSignInfo.reward.description )
+      ){
         sendMessage.push(
           `本次签到获得${currentSignInfo.reward.name || ''}${currentSignInfo.reward.description || ''
           }`
         )
+      }
+      let res = signInLogs.filter((signInLog) => {
+        return signInLog.status== 'normal'&&!signInLog.isReward&&signInLog.type=="postpone";
+      });
+      if(res.length>0){
+        let days=0
+        res.forEach(function(item,index,self){
+          days+=item.rewardAmount
+        })
+        sendMessage.push(`有${res.length}张容量延期卡共${days}天【待领取】`)
+      }
 
       return sendMessage.join(', ')
     })
@@ -127,7 +137,7 @@ function getfilelist(default_drive_id, temp_transfer_folder_id, access_token) {
     })
 }
 
-//删除文件到回收站
+//直接删除文件
 function batch(default_drive_id, file_ids, access_token) {
   const requests = file_ids.map(fileId => ({
     body: {
@@ -156,34 +166,6 @@ function batch(default_drive_id, file_ids, access_token) {
     .catch(e => {
       errorMessage.push(e.message)
       return Promise.reject(errorMessage.join(', '))
-    })
-}
-
-//清空回收站
-function clearfiles(default_drive_id, access_token, remarks) {
-  const sendMessage = [remarks]
-  return axios(clearURL, {
-    method: 'POST',
-    data: '{"drive_id":"' + default_drive_id + '"}',
-    headers: {
-      authorization: access_token,
-      'Content-Type': 'application/json'
-    }
-  })
-    .then(d => d.data)
-    .then(json => {
-      if (!json.domain_id) {
-        sendMessage.push('清空转存目录失败')
-        return Promise.reject(sendMessage.join(', '))
-      }
-      else {
-        sendMessage.push('清空转存目录成功')
-        return Promise.reject(sendMessage.join(', '))
-      }
-    })
-    .catch(e => {
-      sendMessage.push(e.message)
-      return Promise.reject(sendMessage.join(', '))
     })
 }
 
@@ -294,8 +276,6 @@ async function getRefreshToken() {
           filecount += filelist.length
           await batch(default_drive_id, filelist, access_token)
         }
-        // sendMessage = await clearfiles(default_drive_id, access_token, remarks)
-        // message.push(sendMessage)
         console.log(`已删除转存文件${filecount}个`)
         message.push(`已删除转存文件${filecount}个`)
         console.log('\n')
