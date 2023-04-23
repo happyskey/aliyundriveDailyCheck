@@ -12,7 +12,7 @@ const rewardURL = 'https://member.aliyundrive.com/v1/activity/sign_in_reward?_rx
 const getdeviceidurl = 'https://api.aliyundrive.com/adrive/v2/user/get'
 const getfilelistURL = 'https://api.aliyundrive.com/adrive/v3/file/list'
 const batchURL = 'https://api.aliyundrive.com/v2/batch'
-const restarttime = 10
+const restarttime = 10 //失败重试次数
 // 使用 refresh_token 更新 access_token
 function updateAccesssToken(queryBody, remarks, time) {
   const _times = time | 0
