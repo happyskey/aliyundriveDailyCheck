@@ -55,7 +55,7 @@ ql repo https://github.com/gavinliuisme/aliyundriveDailyCheck.git "autoSignin" "
 
 `青龙面板 -> 定时任务 -> 新建任务` 添加命令并执行
 
-![aliyundriveDailyCheck.png](./assets/aliyundriveDailyCheck1.png)
+![aliyundriveDailyCheck.png](./assets/aliyundriveDailyCheck.png)
 
 ### 申明
 
