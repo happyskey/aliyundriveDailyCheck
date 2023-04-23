@@ -87,7 +87,7 @@ function sign_in(access_token, remarks, times) {
 
       // 未领取奖励列表
       const rewards = signInLogs.filter(
-        v => v.status === 'normal' && !v.isReward
+        v => v.status === 'normal' && !v.isReward //&& v.type == 'postpone' 
       )
 
       if (rewards.length) {
@@ -155,6 +155,7 @@ function getReward(access_token, signInDay, times) {
 //获取设备id
 function getdeviceid(access_token, time) {
   const _times = time | 0
+  const errorMessage = [ '获取设备id失败']
   return axios(getdeviceidurl, {
     method: 'POST',
     data: '{}',
@@ -182,6 +183,7 @@ function getdeviceid(access_token, time) {
 //获取临时转存文件内容
 function getfilelist(default_drive_id, temp_transfer_folder_id, access_token, time) {
   const _times = time | 0
+  const errorMessage = [ '获取临时转存文件内容失败']
   return axios(getfilelistURL, {
     method: 'POST',
     data: '{"drive_id":"' + default_drive_id + '","parent_file_id":"' + temp_transfer_folder_id + '","limit":200}',
@@ -209,6 +211,7 @@ function getfilelist(default_drive_id, temp_transfer_folder_id, access_token, ti
 //直接删除文件
 function batch(default_drive_id, file_ids, access_token, time) {
   const _times = time | 0
+  const errorMessage = [ '直接删除文件失败']
   const requests = file_ids.map(fileId => ({
     body: {
       drive_id: default_drive_id,
