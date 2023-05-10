@@ -11,8 +11,8 @@
 
 ### Use 使用
 
-#### 第一步：获取 refresh_token
-- xiaoya三个必备文件中的mytoken.txt中的内容
+#### 第一步：获取 refresh_token和temp_transfer_folder_id
+- xiaoya三个必备文件中的mytoken.txt和temp_transfer_folder_id.txt中的内容
 
 - 自动获取: 登录[阿里云盘](https://www.aliyundrive.com/drive/)后，控制台粘贴 `JSON.parse(localStorage.token).refresh_token`
   ![](./assets/refresh_token_1.png)
