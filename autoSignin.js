@@ -186,7 +186,7 @@ function getfilelist(default_drive_id, temp_transfer_folder_id, access_token, ti
   const errorMessage = [ '获取临时转存文件内容失败']
   return axios(getfilelistURL, {
     method: 'POST',
-    data: '{"drive_id":"' + default_drive_id + '","parent_file_id":"' + temp_transfer_folder_id + '","limit":200}',
+    data: '{"drive_id":"' + default_drive_id + '","parent_file_id":"' + temp_transfer_folder_id + '"}',
     headers: {
       authorization: access_token,
       'Content-Type': 'application/json'
@@ -349,11 +349,6 @@ async function getRefreshToken() {
         filelist = await getfilelist(default_drive_id, temp_transfer_folder_id, access_token)
         let filecount = filelist.length
         await batch(default_drive_id, filelist, access_token)
-        while (filelist.length == 200) {
-          filelist = await getfilelist(default_drive_id, temp_transfer_folder_id, access_token)
-          filecount += filelist.length
-          await batch(default_drive_id, filelist, access_token)
-        }
         console.log(`已删除转存文件${filecount}个`)
         message.push(`已删除转存文件${filecount}个`)
         console.log('\n')
