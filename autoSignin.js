@@ -9,10 +9,10 @@ const notify = require('./sendNotify')
 const updateAccesssTokenURL = 'https://auth.aliyundrive.com/v2/account/token'
 const signinURL = 'https://member.aliyundrive.com/v1/activity/sign_in_list?_rx-s=mobile'
 const rewardURL = 'https://member.aliyundrive.com/v1/activity/sign_in_reward?_rx-s=mobile'
-const getdeviceidurl = 'https://api.aliyundrive.com/adrive/v2/user/get'
+const getdeviceidurl = 'https://user.aliyundrive.com/v2/user/get'
 const getfilelistURL = 'https://api.aliyundrive.com/adrive/v3/file/list'
 const batchURL = 'https://api.aliyundrive.com/v2/batch'
-const restarttime = 10 //失败重试次数
+const restarttime = 10
 // 使用 refresh_token 更新 access_token
 function updateAccesssToken(queryBody, remarks, time) {
   const _times = time | 0
@@ -166,8 +166,8 @@ function getdeviceid(access_token, time) {
   })
     .then(d => d.data)
     .then(d => {
-      const { default_drive_id } = d
-      return { default_drive_id }
+        const { default_drive_id, resource_drive_id } = d
+        return { default_drive_id, resource_drive_id }
     })
     .catch(e => {
       errorMessage.push(e.message)
@@ -186,7 +186,7 @@ function getfilelist(default_drive_id, temp_transfer_folder_id, access_token, ti
   const errorMessage = [ '获取临时转存文件内容失败']
   return axios(getfilelistURL, {
     method: 'POST',
-    data: '{"drive_id":"' + default_drive_id + '","parent_file_id":"' + temp_transfer_folder_id + '"}',
+    data: '{"drive_id":"' + default_drive_id + '","parent_file_id":"' + temp_transfer_folder_id + '","limit":200}',
     headers: {
       authorization: access_token,
       'Content-Type': 'application/json'
@@ -343,12 +343,18 @@ async function getRefreshToken() {
       console.log('\n')
       message.push(sendMessage)
       if (temp_transfer_folder_id && temp_transfer_folder_id !== 'none') {
-        const { default_drive_id } =
+        const { default_drive_id, resource_drive_id } =
           await getdeviceid(access_token)
+        const drive_id = resource_drive_id?resource_drive_id:default_drive_id
         let filelist = []
-        filelist = await getfilelist(default_drive_id, temp_transfer_folder_id, access_token)
+        filelist = await getfilelist(drive_id, temp_transfer_folder_id, access_token)
         let filecount = filelist.length
-        await batch(default_drive_id, filelist, access_token)
+        await batch(drive_id, filelist, access_token)
+        while (filelist.length == 200) {
+          filelist = await getfilelist(drive_id, temp_transfer_folder_id, access_token)
+          filecount += filelist.length
+          await batch(drive_id, filelist, access_token)
+        }
         console.log(`已删除转存文件${filecount}个`)
         message.push(`已删除转存文件${filecount}个`)
         console.log('\n')
