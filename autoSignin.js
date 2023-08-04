@@ -7,8 +7,12 @@ const { initInstance, getEnv, updateCkEnv } = require('./qlApi.js')
 const notify = require('./sendNotify')
 
 const updateAccesssTokenURL = 'https://auth.aliyundrive.com/v2/account/token'
-const signinURL = 'https://member.aliyundrive.com/v1/activity/sign_in_list?_rx-s=mobile'
-const rewardURL = 'https://member.aliyundrive.com/v1/activity/sign_in_reward?_rx-s=mobile'
+const signinURL =
+  'https://member.aliyundrive.com/v2/activity/sign_in_list?_rx-s=mobile'//签到列表
+const rewardURL =
+  'https://member.aliyundrive.com/v1/activity/sign_in_reward?_rx-s=mobile'//每日签到领取 
+const taskrewardURL =
+  'https://member.aliyundrive.com/v2/activity/sign_in_task_reward?_rx-s=mobile'//每日任务领取，任务未完成会失败  
 const getdeviceidurl = 'https://user.aliyundrive.com/v2/user/get'
 const getfilelistURL = 'https://api.aliyundrive.com/adrive/v3/file/list'
 const batchURL = 'https://api.aliyundrive.com/v2/batch'
@@ -80,26 +84,43 @@ function sign_in(access_token, remarks, times) {
 
       sendMessage.push('签到成功')
 
-      const { signInLogs, signInCount } = json.result
+      const { signInInfos, signInCount } = json.result
       const currentSignInfo = signInLogs[signInCount - 1] // 当天签到信息
 
       sendMessage.push(`本月累计签到 ${signInCount} 天`)
 
       // 未领取奖励列表
-      const rewards = signInLogs.filter(
-        v => v.status === 'normal' && !v.isReward //&& v.type == 'postpone' 
+      const rewards = signInInfos.filter(
+        v => v.status === 'normal' && v.rewards.filter(k => (k.type==='dailySignIn'||k.type==='dailySignIn') && k.status!=='verification')
       )
 
       if (rewards.length) {
         for await (reward of rewards) {
           const signInDay = reward.day
-          try {
-            const rewardInfo = await getReward(access_token, signInDay)
-            sendMessage.push(
-              `第${signInDay}天奖励领取成功: 获得${rewardInfo.name || ''}${
-                rewardInfo.description || ''
-              }`
-            )
+          try {            
+              let rewardInfo = await getReward(access_token, signInDay,rewardURL)
+              sendMessage.push(
+                `第${signInDay}天奖励领取成功: 获得${rewardInfo.name || ''}${
+                  rewardInfo.description || ''
+                }`
+              )
+              if(reward[1] && reward[1].type === 'dailyTask'){
+              rewardInfo = await getReward(access_token, signInDay,taskrewardURL)
+              if(rewardInfo.name ||''){
+                sendMessage.push(
+                  `、${rewardInfo.name || ''}${
+                    rewardInfo.description || ''
+                  }`
+                )
+              }
+              else{
+                sendMessage.push(
+                  `、${
+                    reward.remind || ''
+                  }`
+                )
+              }
+            }
           } catch (e) {
             sendMessage.push(`第${signInDay}天奖励领取失败:`, e)
           }
@@ -127,9 +148,9 @@ function sign_in(access_token, remarks, times) {
 }
 
 // 领取奖励
-function getReward(access_token, signInDay, times) {
+function getReward(access_token, signInDay,rewardURL_) {
   const _times = times | 0
-  return axios(rewardURL, {
+  return axios(rewardURL_, {
     method: 'POST',
     data: { signInDay },
     headers: {
@@ -148,7 +169,7 @@ function getReward(access_token, signInDay, times) {
         }
       }
 
-      return json.result
+      return json.result || json
     })
 }
 
