@@ -109,7 +109,7 @@ function sign_in(access_token, remarks, times) {
               if(rewardInfo.message){
                 sendMessage.push(
                   `${rewardInfo.message || ''}，${
-                    (rewardInfo.code==='ExchangeFailed'?reward.rewards[1].remind:reward.rewards[1].name) || ''
+                    (rewardInfo.code==='ExchangeFailed'?reward.rewards[1].remind+'，'+reward.rewards[1].name:reward.rewards[1].name) || ''
                   }`
                 )
               }
