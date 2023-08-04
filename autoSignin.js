@@ -85,38 +85,38 @@ function sign_in(access_token, remarks, times) {
       sendMessage.push('签到成功')
 
       const { signInInfos, signInCount } = json.result
-      const currentSignInfo = signInLogs[signInCount - 1] // 当天签到信息
+      const currentSignInfo = signInInfos[signInCount - 1] // 当天签到信息
 
       sendMessage.push(`本月累计签到 ${signInCount} 天`)
 
       // 未领取奖励列表
       const rewards = signInInfos.filter(
-        v => v.status === 'normal' && v.rewards.filter(k => (k.type==='dailySignIn'||k.type==='dailySignIn') && k.status!=='verification')
+        v => v.status === 'normal' && v.rewards.filter(k => (k.type==='dailySignIn'||k.type==='dailyTask') && k.status!=='verification').length
       )
-
+      
       if (rewards.length) {
         for await (reward of rewards) {
           const signInDay = reward.day
-          try {            
+          try {
               let rewardInfo = await getReward(access_token, signInDay,rewardURL)
               sendMessage.push(
                 `第${signInDay}天奖励领取成功: 获得${rewardInfo.name || ''}${
                   rewardInfo.description || ''
                 }`
               )
-              if(reward[1] && reward[1].type === 'dailyTask'){
-              rewardInfo = await getReward(access_token, signInDay,taskrewardURL)
-              if(rewardInfo.name ||''){
+              if(reward.rewards[1] && reward.rewards[1].type === 'dailyTask'){
+              rewardInfo = await getReward(access_token, signInDay,taskrewardURL)              
+              if(rewardInfo.message){
                 sendMessage.push(
-                  `、${rewardInfo.name || ''}${
-                    rewardInfo.description || ''
+                  `${rewardInfo.message || ''}${
+                    reward.rewards[1].remind || ''
                   }`
                 )
               }
               else{
                 sendMessage.push(
-                  `、${
-                    reward.remind || ''
+                  `${rewardInfo.name || ''}${
+                    rewardInfo.description || ''
                   }`
                 )
               }
@@ -148,7 +148,7 @@ function sign_in(access_token, remarks, times) {
 }
 
 // 领取奖励
-function getReward(access_token, signInDay,rewardURL_) {
+function getReward(access_token, signInDay,rewardURL_,times) {
   const _times = times | 0
   return axios(rewardURL_, {
     method: 'POST',
@@ -165,12 +165,15 @@ function getReward(access_token, signInDay,rewardURL_) {
           return getReward(access_token, signInDay, _times+1)
         }
         else{
-          return Promise.reject(json.message)
+          return Promise.reject(json.message || json)
         }
       }
 
       return json.result || json
     })
+    .catch(function (error) {
+      return error.response.data;
+    });
 }
 
 //获取设备id
