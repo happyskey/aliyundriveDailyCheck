@@ -12,7 +12,8 @@ const signinURL =
 const rewardURL =
   'https://member.aliyundrive.com/v1/activity/sign_in_reward?_rx-s=mobile'//每日签到领取 
 const taskrewardURL =
-  'https://member.aliyundrive.com/v2/activity/sign_in_task_reward?_rx-s=mobile'//每日任务领取，任务未完成会失败  
+  'https://member.aliyundrive.com/v2/activity/sign_in_task_reward?_rx-s=mobile'//每日任务领取，任务未完成会失败
+const complementURL = 'https://member.aliyundrive.com/v1/activity/complement_sign_in?_rx-s=mobile'//补签卡
 const getdeviceidurl = 'https://user.aliyundrive.com/v2/user/get'
 const getfilelistURL = 'https://api.aliyundrive.com/adrive/v3/file/list'
 const batchURL = 'https://api.aliyundrive.com/v2/batch'
