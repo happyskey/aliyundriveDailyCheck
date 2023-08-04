@@ -8,9 +8,11 @@ const notify = require('./sendNotify')
 
 const updateAccesssTokenURL = 'https://auth.aliyundrive.com/v2/account/token'
 const signinURL =
-  'https://member.aliyundrive.com/v1/activity/sign_in_list?_rx-s=mobile'
+  'https://member.aliyundrive.com/v2/activity/sign_in_list?_rx-s=mobile'//签到列表
 const rewardURL =
-  'https://member.aliyundrive.com/v1/activity/sign_in_reward?_rx-s=mobile'
+  'https://member.aliyundrive.com/v1/activity/sign_in_reward?_rx-s=mobile'//每日签到领取 
+const taskrewardURL =
+  'https://member.aliyundrive.com/v2/activity/sign_in_task_reward?_rx-s=mobile'//每日任务领取，任务未完成会失败  
 
 // 使用 refresh_token 更新 access_token
 function updateAccesssToken(queryBody, remarks) {
@@ -76,12 +78,22 @@ function sign_in(access_token, remarks) {
         for await (reward of rewards) {
           const signInDay = reward.day
           try {
-            const rewardInfo = await getReward(access_token, signInDay)
-            sendMessage.push(
-              `第${signInDay}天奖励领取成功: 获得${rewardInfo.name || ''}${
-                rewardInfo.description || ''
-              }`
-            )
+            if(reward.type === 'dailySignIn'){
+              const rewardInfo = await getReward(access_token, signInDay,rewardURL)
+              sendMessage.push(
+                `第${signInDay}天奖励领取成功: 获得${rewardInfo.name || ''}${
+                  rewardInfo.description || ''
+                }`
+              )
+            }
+            else if(reward.type === 'dailyTask'){
+              const rewardInfo = await getReward(access_token, signInDay,taskrewardURL)
+              sendMessage.push(
+                `第${signInDay}天奖励领取成功: 获得${rewardInfo.name || ''}${
+                  rewardInfo.description || ''
+                }`
+              
+            }
           } catch (e) {
             sendMessage.push(`第${signInDay}天奖励领取失败:`, e)
           }
@@ -104,8 +116,8 @@ function sign_in(access_token, remarks) {
 }
 
 // 领取奖励
-function getReward(access_token, signInDay) {
-  return axios(rewardURL, {
+function getReward(access_token, signInDay,rewardURL_) {
+  return axios(rewardURL_, {
     method: 'POST',
     data: { signInDay },
     headers: {
@@ -119,7 +131,7 @@ function getReward(access_token, signInDay) {
         return Promise.reject(json.message)
       }
 
-      return json.result
+      return json.result || json
     })
 }
 
