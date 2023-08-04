@@ -108,7 +108,7 @@ function sign_in(access_token, remarks, times) {
               rewardInfo = await getReward(access_token, signInDay,taskrewardURL)              
               if(rewardInfo.message){
                 sendMessage.push(
-                  `${rewardInfo.message || ''}${
+                  `${rewardInfo.message || ''}，${
                     reward.rewards[1].remind || ''
                   }`
                 )
