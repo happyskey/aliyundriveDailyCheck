@@ -12,8 +12,7 @@ const signinURL =
 const rewardURL =
   'https://member.aliyundrive.com/v1/activity/sign_in_reward?_rx-s=mobile'//每日签到领取 
 const taskrewardURL =
-  'https://member.aliyundrive.com/v2/activity/sign_in_task_reward?_rx-s=mobile'//每日任务领取，任务未完成会失败
-const complementURL = 'https://member.aliyundrive.com/v1/activity/complement_sign_in?_rx-s=mobile'//补签卡
+  'https://member.aliyundrive.com/v2/activity/sign_in_task_reward?_rx-s=mobile'//每日任务领取，任务未完成会失败  
 const getdeviceidurl = 'https://user.aliyundrive.com/v2/user/get'
 const getfilelistURL = 'https://api.aliyundrive.com/adrive/v3/file/list'
 const batchURL = 'https://api.aliyundrive.com/v2/batch'
@@ -89,27 +88,26 @@ function sign_in(access_token, remarks, times) {
       const currentSignInfo = signInInfos[signInCount - 1] // 当天签到信息
 
       sendMessage.push(`本月累计签到 ${signInCount} 天`)
-
-      // 未领取奖励列表
+      const today = new Date().getDate()
+      // 未签到或者当天未领取奖励列表
       const rewards = signInInfos.filter(
-        v => v.status === 'normal' && v.rewards.filter(k => (k.type==='dailySignIn'||k.type==='dailyTask') && k.status!=='verification').length
+        v => v.status === 'normal' && v.rewards.filter(k => (k.type==='dailySignIn' ||(v.day==today && k.type==='dailyTask' )) && k.status!=='verification').length
       )
-      
       if (rewards.length) {
         for await (reward of rewards) {
           const signInDay = reward.day
           try {
               let rewardInfo = await getReward(access_token, signInDay,rewardURL)
               sendMessage.push(
-                `第${signInDay}天奖励领取成功: 获得${rewardInfo.name || ''}${
+                `第${signInDay}天签到奖励领取成功: 获得${rewardInfo.name || ''}${
                   rewardInfo.description || ''
                 }`
               )
-              if(reward.rewards[1] && reward.rewards[1].type === 'dailyTask'){
+              if(reward.rewards[1] && reward.rewards[1].type === 'dailyTask' && today == reward.day){
               rewardInfo = await getReward(access_token, signInDay,taskrewardURL)              
               if(rewardInfo.message){
                 sendMessage.push(
-                  `${rewardInfo.message || ''}，${
+                  `\n当天任务奖励${rewardInfo.message || ''}，${
                     (rewardInfo.code==='ExchangeFailed'?reward.rewards[1].remind+'，'+reward.rewards[1].name:reward.rewards[1].name) || ''
                   }`
                 )
