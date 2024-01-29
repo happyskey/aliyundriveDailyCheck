@@ -14,7 +14,7 @@ const rewardURL =
 const taskrewardURL =
   'https://member.aliyundrive.com/v2/activity/sign_in_task_reward?_rx-s=mobile'//每日任务领取，任务未完成会失败  
 const getdeviceidurl = 'https://user.aliyundrive.com/v2/user/get'
-const getfilelistURL = 'https://api.aliyundrive.com/adrive/v3/file/list'
+const getfilelistURL = 'https://api.aliyundrive.com/adrive/v2/file/list'
 const batchURL = 'https://api.aliyundrive.com/v2/batch'
 const restarttime = 10
 // 使用 refresh_token 更新 access_token
